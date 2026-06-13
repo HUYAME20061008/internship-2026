@@ -13,9 +13,9 @@ int main(int argc, char *argv[])
         if (!f)
         {
             if (_access(argv[1], 0) == 0)
-                printf("文件无法打开\n");
+                printf("文件无法打开!\n");
             else
-                printf("文件不存在\n");
+                printf("文件不存在!\n");
             return 1;
         }
         int a = 0, b = 0, c = 0, ch, in = 0;
