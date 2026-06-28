@@ -1,4 +1,4 @@
-#include"head.h"
+#include "head.h"
 
 /**
  * @brief 删除联系人界面渲染
@@ -20,6 +20,14 @@ go:
         printL(0, i, "│                                      │");
     for (int i = 5; i < 12; i++)
         printL(14, i, "│");
+    if (list.n == 0)
+    {
+
+        for (int i = 3; i < 14; i++)
+            printL(0, i, "│                                      │");
+        printL(4, 4, "暂无联系人");
+        goto go1;
+    }
     printL(3, 3, "姓名");
     printL(14, 2, "┬");
     printL(14, 3, "│  电话");
@@ -53,13 +61,25 @@ go:
             printf("\033[44m");
         printL(34, 5 + i, "\033[31m删除\033[0m");
     }
+go1:
     ReleaseMutex(ob);
     while (1)
     {
+    go2:;
         HANDLE hEvents[] = {cin, stop, del, movl, movr, movu, movd, enter, esc, back};
         DWORD wait = WaitForMultipleObjects(sizeof(hEvents) / sizeof(HANDLE), hEvents, FALSE, INFINITE);
         WaitForSingleObject(ob, INFINITE);
         // 界面刷新事件处理
+        if (list.n == 0)
+        {
+            for (int i = 3; i < 14; i++)
+                printL(0, i, "│                                      │");
+            if (wait == 8)
+                return;
+            printL(4, 4, "暂无联系人");
+            ReleaseMutex(ob);
+            goto go2;
+        }
         switch (wait)
         {
         case 0:
@@ -167,6 +187,17 @@ void O2()
     {
         c = _getch();
         WaitForSingleObject(ob, INFINITE);
+        if (list.n == 0)
+        {
+            if (c == ESC)
+            {
+                SetEvent(esc);
+                ReleaseMutex(ob);
+                break;
+            }
+            ReleaseMutex(ob);
+            continue;
+        }
         if (c == ESC)
         {
             SetEvent(esc);
