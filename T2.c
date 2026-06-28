@@ -1,4 +1,19 @@
-#include"head.h"
+/**
+ * @file T2.c
+ * @brief 【删除联系人】功能模块代码
+ * @author 廖吉
+ * @date 2026-06-27
+ * @version 1.0
+ * @description
+ * 1. V2()：删除联系人分页列表界面渲染，每页7条联系人，红色删除标识；
+ * 2. O2()：删除界面按键逻辑，上下切换联系人、翻页、回车执行删除；
+ * 3. 删除逻辑：数组前移覆盖元素，自动修正页码、处理空联系人边界；
+ * 4. 多线程互斥锁保证列表数据修改时界面不冲突；
+ * @cooperate 黄耀盟(底层框架)、李远豪(联动测试)
+ * @module 任务三校园通讯录-删除联系人子功能
+ */
+
+#include "head.h"
 
 /**
  * @brief 删除联系人界面渲染
@@ -20,6 +35,14 @@ go:
         printL(0, i, "│                                      │");
     for (int i = 5; i < 12; i++)
         printL(14, i, "│");
+    if (list.n == 0)
+    {
+
+        for (int i = 3; i < 14; i++)
+            printL(0, i, "│                                      │");
+        printL(4, 4, "暂无联系人");
+        goto go1;
+    }
     printL(3, 3, "姓名");
     printL(14, 2, "┬");
     printL(14, 3, "│  电话");
@@ -53,13 +76,25 @@ go:
             printf("\033[44m");
         printL(34, 5 + i, "\033[31m删除\033[0m");
     }
+go1:
     ReleaseMutex(ob);
     while (1)
     {
+    go2:;
         HANDLE hEvents[] = {cin, stop, del, movl, movr, movu, movd, enter, esc, back};
         DWORD wait = WaitForMultipleObjects(sizeof(hEvents) / sizeof(HANDLE), hEvents, FALSE, INFINITE);
         WaitForSingleObject(ob, INFINITE);
         // 界面刷新事件处理
+        if (list.n == 0)
+        {
+            for (int i = 3; i < 14; i++)
+                printL(0, i, "│                                      │");
+            if (wait == 8)
+                return;
+            printL(4, 4, "暂无联系人");
+            ReleaseMutex(ob);
+            goto go2;
+        }
         switch (wait)
         {
         case 0:
@@ -167,6 +202,17 @@ void O2()
     {
         c = _getch();
         WaitForSingleObject(ob, INFINITE);
+        if (list.n == 0)
+        {
+            if (c == ESC)
+            {
+                SetEvent(esc);
+                ReleaseMutex(ob);
+                break;
+            }
+            ReleaseMutex(ob);
+            continue;
+        }
         if (c == ESC)
         {
             SetEvent(esc);
