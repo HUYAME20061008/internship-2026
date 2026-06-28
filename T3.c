@@ -1,4 +1,4 @@
-#include"head.h"
+#include "head.h"
 
 /**
  * @brief 修改联系人界面渲染
@@ -15,6 +15,15 @@ void V3()
     X = 0;
     Y = 0;
 go:
+    if (list.n == 0)
+    {
+        printL(0, 1, "│            ✏️  修改联系人             │");
+        for (int i = 3; i < 14; i++)
+            printL(0, i, "│                                      │");
+        printL(4, 4, "暂无联系人");
+        setHide(0);
+        goto go1;
+    }
     a = list.N[Y + num1 * 7 - 7]; // 加载选中联系人至临时缓存
     printL(0, 1, "│            ✏️  修改联系人             │");
     for (int i = 3; i < 14; i++)
@@ -64,12 +73,24 @@ go:
             setPos(17 + lenStr(a.number), 5 + Y);
         }
     }
+go1:
     ReleaseMutex(ob);
     while (1)
     {
+    go2:;
         HANDLE hEvents[] = {cin, stop, del, movl, movr, movu, movd, enter, esc, back};
         DWORD wait = WaitForMultipleObjects(sizeof(hEvents) / sizeof(HANDLE), hEvents, FALSE, INFINITE);
         WaitForSingleObject(ob, INFINITE);
+        if (list.n == 0)
+        {
+            for (int i = 3; i < 14; i++)
+                printL(0, i, "│                                      │");
+            if (wait == 8)
+                return;
+            printL(4, 4, "暂无联系人");
+            ReleaseMutex(ob);
+            goto go2;
+        }
         // 界面刷新逻辑省略注释，结构同V2
         switch (wait)
         {
@@ -222,6 +243,19 @@ void O3()
     {
         c = _getch();
         WaitForSingleObject(ob, INFINITE);
+        if (list.n == 0)
+        {
+            if (c == ESC) // 退出自动保存修改回原数组
+            {
+                if (Y != 7)
+                    list.N[Y + num1 * 7 - 7] = a;
+                SetEvent(esc);
+                ReleaseMutex(ob);
+                break;
+            }
+            ReleaseMutex(ob);
+            continue;
+        }
         if (c == ESC) // 退出自动保存修改回原数组
         {
             if (Y != 7)
